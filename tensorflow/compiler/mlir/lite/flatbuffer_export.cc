@@ -556,6 +556,10 @@ class Translator {
     // The first buffer must be empty according to the schema definition.
     empty_buffer_ = tflite::CreateBuffer(builder_);
     buffers_.push_back(empty_buffer_);
+    empty_buffer_ = tflite::CreateBuffer(builder_);
+    first_copy_.push_back(empty_buffer_);
+    empty_buffer_ = tflite::CreateBuffer(builder_);
+    second_copy_.push_back(empty_buffer_);
     if (!toco_flags.force_select_tf_ops()) {
       enabled_op_types_.emplace(OpType::kTfliteBuiltin);
     }
@@ -732,6 +736,8 @@ class Translator {
   BufferOffset<tflite::Buffer> empty_buffer_;
 
   std::vector<BufferOffset<tflite::Buffer>> buffers_;
+  std::vector<BufferOffset<tflite::Buffer>> first_copy_;
+  std::vector<BufferOffset<tflite::Buffer>> second_copy_;
   // Maps subgraph index and tensor name in the graph to the tensor index.
   absl::flat_hash_map<int, absl::flat_hash_map<std::string, int>>
       tensor_index_map_;
@@ -1829,11 +1835,29 @@ std::optional<BufferOffset<tflite::SubGraph>> Translator::BuildSubGraph(
     // Tensor. This does not seem to affect runtime behavior for RNN/LSTM,
     // but would be good for reducing memory footprint.
     if (value.getDefiningOp()) {
+      auto type = value.getType().cast<TensorType>();
+      tflite::TensorType tflite_element_type =
+          GetTFLiteType(type.getElementType()).value();
       auto buffer_or = BuildBuffer(value, buffers_.size());
       if (!buffer_or) return false;
+
       buffers_.push_back(*buffer_or);
+      if (tflite_element_type == tflite::TensorType_INT32) {
+        buffer_or = BuildBuffer(value, first_copy_.size());
+        if (!buffer_or) return false;
+        first_copy_.push_back(*buffer_or);
+
+        buffer_or = BuildBuffer(value, second_copy_.size());
+        if (!buffer_or) return false;
+        second_copy_.push_back(*buffer_or);
+      } else {
+        first_copy_.push_back(empty_buffer_);
+        second_copy_.push_back(empty_buffer_);
+      }
     } else {
       buffers_.push_back(empty_buffer_);
+      first_copy_.push_back(empty_buffer_);
+      second_copy_.push_back(empty_buffer_);
     }
     return true;
   };
@@ -1995,6 +2019,8 @@ BufferOffset<tflite::Metadata> Translator::BuildMetadata(StringRef name,
   auto buffer_data = builder_.CreateVector(
       reinterpret_cast<const uint8_t*>(content.data()), content.size());
   buffers_.push_back(tflite::CreateBuffer(builder_, buffer_data));
+  first_copy_.push_back(tflite::CreateBuffer(builder_));
+  second_copy_.push_back(tflite::CreateBuffer(builder_));
   return tflite::CreateMetadataDirect(builder_, name.data(), buffer_index);
 }
 
@@ -2467,12 +2493,16 @@ std::optional<std::string> Translator::TranslateInternal() {
     ++subgraph_index;
   }
   auto signature_defs = CreateSignatureDefs(signature_defs_vec);
+  auto first_copy_buffers = builder_.CreateVector(first_copy_);
+  auto second_copy_buffers = builder_.CreateVector(second_copy_);
+  auto redundancy = tflite::CreateRedundantData(builder_, first_copy_buffers, second_copy_buffers);
 
   auto model = tflite::CreateModel(builder_, TFLITE_SCHEMA_VERSION,
                                    builder_.CreateVector(opcodes_),
                                    builder_.CreateVector(subgraphs),
                                    description, builder_.CreateVector(buffers_),
-                                   metadata_buffer, *metadata, *signature_defs);
+                                   metadata_buffer, *metadata, *signature_defs,
+                                   redundancy);
   tflite::FinishModelBuffer(builder_, model);
   // There is a limit of 2GB for a flatbuffer.
   bool flatbuffer_limit_exceeded = builder_.GetSize() > flatbuffer_size_max;
