@@ -613,6 +613,10 @@ struct SignatureDef;
 struct SignatureDefBuilder;
 struct SignatureDefT;
 
+struct RedundantData;
+struct RedundantDataBuilder;
+struct RedundantDataT;
+
 struct Model;
 struct ModelBuilder;
 struct ModelT;
@@ -14213,6 +14217,89 @@ inline ::flatbuffers::Offset<SignatureDef> CreateSignatureDefDirect(
 
 ::flatbuffers::Offset<SignatureDef> CreateSignatureDef(::flatbuffers::FlatBufferBuilder &_fbb, const SignatureDefT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct RedundantDataT : public ::flatbuffers::NativeTable {
+  typedef RedundantData TableType;
+  std::vector<std::unique_ptr<tflite::BufferT>> first_copy{};
+  std::vector<std::unique_ptr<tflite::BufferT>> second_copy{};
+  RedundantDataT() = default;
+  RedundantDataT(const RedundantDataT &o);
+  RedundantDataT(RedundantDataT&&) FLATBUFFERS_NOEXCEPT = default;
+  RedundantDataT &operator=(RedundantDataT o) FLATBUFFERS_NOEXCEPT;
+};
+
+struct RedundantData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef RedundantDataT NativeTableType;
+  typedef RedundantDataBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_FIRST_COPY = 4,
+    VT_SECOND_COPY = 6
+  };
+  const ::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>> *first_copy() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>> *>(VT_FIRST_COPY);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>> *second_copy() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>> *>(VT_SECOND_COPY);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_FIRST_COPY) &&
+           verifier.VerifyVector(first_copy()) &&
+           verifier.VerifyVectorOfTables(first_copy()) &&
+           VerifyOffset(verifier, VT_SECOND_COPY) &&
+           verifier.VerifyVector(second_copy()) &&
+           verifier.VerifyVectorOfTables(second_copy()) &&
+           verifier.EndTable();
+  }
+  RedundantDataT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(RedundantDataT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<RedundantData> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const RedundantDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct RedundantDataBuilder {
+  typedef RedundantData Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_first_copy(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>>> first_copy) {
+    fbb_.AddOffset(RedundantData::VT_FIRST_COPY, first_copy);
+  }
+  void add_second_copy(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>>> second_copy) {
+    fbb_.AddOffset(RedundantData::VT_SECOND_COPY, second_copy);
+  }
+  explicit RedundantDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<RedundantData> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<RedundantData>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<RedundantData> CreateRedundantData(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>>> first_copy = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>>> second_copy = 0) {
+  RedundantDataBuilder builder_(_fbb);
+  builder_.add_second_copy(second_copy);
+  builder_.add_first_copy(first_copy);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<RedundantData> CreateRedundantDataDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<tflite::Buffer>> *first_copy = nullptr,
+    const std::vector<::flatbuffers::Offset<tflite::Buffer>> *second_copy = nullptr) {
+  auto first_copy__ = first_copy ? _fbb.CreateVector<::flatbuffers::Offset<tflite::Buffer>>(*first_copy) : 0;
+  auto second_copy__ = second_copy ? _fbb.CreateVector<::flatbuffers::Offset<tflite::Buffer>>(*second_copy) : 0;
+  return tflite::CreateRedundantData(
+      _fbb,
+      first_copy__,
+      second_copy__);
+}
+
+::flatbuffers::Offset<RedundantData> CreateRedundantData(::flatbuffers::FlatBufferBuilder &_fbb, const RedundantDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 struct ModelT : public ::flatbuffers::NativeTable {
   typedef Model TableType;
   uint32_t version = 0;
@@ -14223,6 +14310,7 @@ struct ModelT : public ::flatbuffers::NativeTable {
   std::vector<int32_t> metadata_buffer{};
   std::vector<std::unique_ptr<tflite::MetadataT>> metadata{};
   std::vector<std::unique_ptr<tflite::SignatureDefT>> signature_defs{};
+  std::unique_ptr<tflite::RedundantDataT> redundancy{};
   ModelT() = default;
   ModelT(const ModelT &o);
   ModelT(ModelT&&) FLATBUFFERS_NOEXCEPT = default;
@@ -14240,7 +14328,8 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_BUFFERS = 12,
     VT_METADATA_BUFFER = 14,
     VT_METADATA = 16,
-    VT_SIGNATURE_DEFS = 18
+    VT_SIGNATURE_DEFS = 18,
+    VT_REDUNDANCY = 20
   };
   uint32_t version() const {
     return GetField<uint32_t>(VT_VERSION, 0);
@@ -14266,6 +14355,9 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<tflite::SignatureDef>> *signature_defs() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<tflite::SignatureDef>> *>(VT_SIGNATURE_DEFS);
   }
+  const tflite::RedundantData *redundancy() const {
+    return GetPointer<const tflite::RedundantData *>(VT_REDUNDANCY);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_VERSION, 4) &&
@@ -14288,6 +14380,8 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_SIGNATURE_DEFS) &&
            verifier.VerifyVector(signature_defs()) &&
            verifier.VerifyVectorOfTables(signature_defs()) &&
+           VerifyOffset(verifier, VT_REDUNDANCY) &&
+           verifier.VerifyTable(redundancy()) &&
            verifier.EndTable();
   }
   ModelT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -14323,6 +14417,9 @@ struct ModelBuilder {
   void add_signature_defs(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::SignatureDef>>> signature_defs) {
     fbb_.AddOffset(Model::VT_SIGNATURE_DEFS, signature_defs);
   }
+  void add_redundancy(::flatbuffers::Offset<tflite::RedundantData> redundancy) {
+    fbb_.AddOffset(Model::VT_REDUNDANCY, redundancy);
+  }
   explicit ModelBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -14343,8 +14440,10 @@ inline ::flatbuffers::Offset<Model> CreateModel(
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::Buffer>>> buffers = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> metadata_buffer = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::Metadata>>> metadata = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::SignatureDef>>> signature_defs = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<tflite::SignatureDef>>> signature_defs = 0,
+    ::flatbuffers::Offset<tflite::RedundantData> redundancy = 0) {
   ModelBuilder builder_(_fbb);
+  builder_.add_redundancy(redundancy);
   builder_.add_signature_defs(signature_defs);
   builder_.add_metadata(metadata);
   builder_.add_metadata_buffer(metadata_buffer);
@@ -14365,7 +14464,8 @@ inline ::flatbuffers::Offset<Model> CreateModelDirect(
     const std::vector<::flatbuffers::Offset<tflite::Buffer>> *buffers = nullptr,
     const std::vector<int32_t> *metadata_buffer = nullptr,
     const std::vector<::flatbuffers::Offset<tflite::Metadata>> *metadata = nullptr,
-    const std::vector<::flatbuffers::Offset<tflite::SignatureDef>> *signature_defs = nullptr) {
+    const std::vector<::flatbuffers::Offset<tflite::SignatureDef>> *signature_defs = nullptr,
+    ::flatbuffers::Offset<tflite::RedundantData> redundancy = 0) {
   auto operator_codes__ = operator_codes ? _fbb.CreateVector<::flatbuffers::Offset<tflite::OperatorCode>>(*operator_codes) : 0;
   auto subgraphs__ = subgraphs ? _fbb.CreateVector<::flatbuffers::Offset<tflite::SubGraph>>(*subgraphs) : 0;
   auto description__ = description ? _fbb.CreateString(description) : 0;
@@ -14382,7 +14482,8 @@ inline ::flatbuffers::Offset<Model> CreateModelDirect(
       buffers__,
       metadata_buffer__,
       metadata__,
-      signature_defs__);
+      signature_defs__,
+      redundancy);
 }
 
 ::flatbuffers::Offset<Model> CreateModel(::flatbuffers::FlatBufferBuilder &_fbb, const ModelT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -18526,10 +18627,53 @@ inline ::flatbuffers::Offset<SignatureDef> CreateSignatureDef(::flatbuffers::Fla
       _subgraph_index);
 }
 
+inline RedundantDataT::RedundantDataT(const RedundantDataT &o) {
+  first_copy.reserve(o.first_copy.size());
+  for (const auto &first_copy_ : o.first_copy) { first_copy.emplace_back((first_copy_) ? new tflite::BufferT(*first_copy_) : nullptr); }
+  second_copy.reserve(o.second_copy.size());
+  for (const auto &second_copy_ : o.second_copy) { second_copy.emplace_back((second_copy_) ? new tflite::BufferT(*second_copy_) : nullptr); }
+}
+
+inline RedundantDataT &RedundantDataT::operator=(RedundantDataT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(first_copy, o.first_copy);
+  std::swap(second_copy, o.second_copy);
+  return *this;
+}
+
+inline RedundantDataT *RedundantData::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<RedundantDataT>(new RedundantDataT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void RedundantData::UnPackTo(RedundantDataT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = first_copy(); if (_e) { _o->first_copy.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->first_copy[_i]) { _e->Get(_i)->UnPackTo(_o->first_copy[_i].get(), _resolver); } else { _o->first_copy[_i] = std::unique_ptr<tflite::BufferT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->first_copy.resize(0); } }
+  { auto _e = second_copy(); if (_e) { _o->second_copy.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->second_copy[_i]) { _e->Get(_i)->UnPackTo(_o->second_copy[_i].get(), _resolver); } else { _o->second_copy[_i] = std::unique_ptr<tflite::BufferT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->second_copy.resize(0); } }
+}
+
+inline ::flatbuffers::Offset<RedundantData> RedundantData::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const RedundantDataT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateRedundantData(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<RedundantData> CreateRedundantData(::flatbuffers::FlatBufferBuilder &_fbb, const RedundantDataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const RedundantDataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _first_copy = _o->first_copy.size() ? _fbb.CreateVector<::flatbuffers::Offset<tflite::Buffer>> (_o->first_copy.size(), [](size_t i, _VectorArgs *__va) { return CreateBuffer(*__va->__fbb, __va->__o->first_copy[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _second_copy = _o->second_copy.size() ? _fbb.CreateVector<::flatbuffers::Offset<tflite::Buffer>> (_o->second_copy.size(), [](size_t i, _VectorArgs *__va) { return CreateBuffer(*__va->__fbb, __va->__o->second_copy[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return tflite::CreateRedundantData(
+      _fbb,
+      _first_copy,
+      _second_copy);
+}
+
 inline ModelT::ModelT(const ModelT &o)
       : version(o.version),
         description(o.description),
-        metadata_buffer(o.metadata_buffer) {
+        metadata_buffer(o.metadata_buffer),
+        redundancy((o.redundancy) ? new tflite::RedundantDataT(*o.redundancy) : nullptr) {
   operator_codes.reserve(o.operator_codes.size());
   for (const auto &operator_codes_ : o.operator_codes) { operator_codes.emplace_back((operator_codes_) ? new tflite::OperatorCodeT(*operator_codes_) : nullptr); }
   subgraphs.reserve(o.subgraphs.size());
@@ -18551,6 +18695,7 @@ inline ModelT &ModelT::operator=(ModelT o) FLATBUFFERS_NOEXCEPT {
   std::swap(metadata_buffer, o.metadata_buffer);
   std::swap(metadata, o.metadata);
   std::swap(signature_defs, o.signature_defs);
+  std::swap(redundancy, o.redundancy);
   return *this;
 }
 
@@ -18571,6 +18716,7 @@ inline void Model::UnPackTo(ModelT *_o, const ::flatbuffers::resolver_function_t
   { auto _e = metadata_buffer(); if (_e) { _o->metadata_buffer.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->metadata_buffer[_i] = _e->Get(_i); } } else { _o->metadata_buffer.resize(0); } }
   { auto _e = metadata(); if (_e) { _o->metadata.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->metadata[_i]) { _e->Get(_i)->UnPackTo(_o->metadata[_i].get(), _resolver); } else { _o->metadata[_i] = std::unique_ptr<tflite::MetadataT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->metadata.resize(0); } }
   { auto _e = signature_defs(); if (_e) { _o->signature_defs.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->signature_defs[_i]) { _e->Get(_i)->UnPackTo(_o->signature_defs[_i].get(), _resolver); } else { _o->signature_defs[_i] = std::unique_ptr<tflite::SignatureDefT>(_e->Get(_i)->UnPack(_resolver)); }; } } else { _o->signature_defs.resize(0); } }
+  { auto _e = redundancy(); if (_e) { if(_o->redundancy) { _e->UnPackTo(_o->redundancy.get(), _resolver); } else { _o->redundancy = std::unique_ptr<tflite::RedundantDataT>(_e->UnPack(_resolver)); } } else if (_o->redundancy) { _o->redundancy.reset(); } }
 }
 
 inline ::flatbuffers::Offset<Model> Model::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ModelT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -18589,6 +18735,7 @@ inline ::flatbuffers::Offset<Model> CreateModel(::flatbuffers::FlatBufferBuilder
   auto _metadata_buffer = _o->metadata_buffer.size() ? _fbb.CreateVector(_o->metadata_buffer) : 0;
   auto _metadata = _o->metadata.size() ? _fbb.CreateVector<::flatbuffers::Offset<tflite::Metadata>> (_o->metadata.size(), [](size_t i, _VectorArgs *__va) { return CreateMetadata(*__va->__fbb, __va->__o->metadata[i].get(), __va->__rehasher); }, &_va ) : 0;
   auto _signature_defs = _o->signature_defs.size() ? _fbb.CreateVector<::flatbuffers::Offset<tflite::SignatureDef>> (_o->signature_defs.size(), [](size_t i, _VectorArgs *__va) { return CreateSignatureDef(*__va->__fbb, __va->__o->signature_defs[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _redundancy = _o->redundancy ? CreateRedundantData(_fbb, _o->redundancy.get(), _rehasher) : 0;
   return tflite::CreateModel(
       _fbb,
       _version,
@@ -18598,7 +18745,8 @@ inline ::flatbuffers::Offset<Model> CreateModel(::flatbuffers::FlatBufferBuilder
       _buffers,
       _metadata_buffer,
       _metadata,
-      _signature_defs);
+      _signature_defs,
+      _redundancy);
 }
 
 inline bool VerifyQuantizationDetails(::flatbuffers::Verifier &verifier, const void *obj, QuantizationDetails type) {

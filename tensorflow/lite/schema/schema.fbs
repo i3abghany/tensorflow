@@ -1405,6 +1405,11 @@ table SignatureDef {
   subgraph_index:uint;
 }
 
+table RedundantData {
+  first_copy:[Buffer];
+  second_copy:[Buffer];
+}
+
 table Model {
   // Version of the schema.
   version:uint;
@@ -1436,6 +1441,9 @@ table Model {
 
   // Optional SignatureDefs for the model.
   signature_defs:[SignatureDef];
+
+  // Redundancy added for TMR
+  redundancy:RedundantData;
 }
 
 root_type Model;
