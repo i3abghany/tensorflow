@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "tensorflow/core/common_runtime/next_pluggable_device/c/tf_device_context_c_api_conversions.h"
 
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <utility>
@@ -47,25 +48,20 @@ TF_Tensor* CopyTensorToTF_Tensor(const Tensor& src) {
   // TODO: Convert through a lookup table for better API compatibility.
   TF_DataType dtype = static_cast<TF_DataType>(src.dtype());
   const TensorShape& shape = src.shape();
-  int64_t* dims = new int64_t[shape.dims()];
+  auto dims = std::make_unique<int64_t[]>(shape.dims());
   size_t len = TF_DataTypeSize(dtype);
   for (int i = 0; i < shape.dims(); ++i) {
     dims[i] = shape.dim_size(i);
     len *= dims[i];
   }
-  TF_Tensor* tf_tensor = TF_AllocateTensor(dtype, dims, shape.dims(), len);
+  TF_Tensor* tf_tensor =
+      TF_AllocateTensor(dtype, dims.get(), shape.dims(), len);
   void* data = TF_TensorData(tf_tensor);
   std::memcpy(data, src.data(), len);
   return tf_tensor;
 }
 
 namespace {
-
-char* ToC(absl::string_view str) {
-  char* cstr = new char[str.size() + 1];
-  strncpy(cstr, str.data(), str.size());
-  return cstr;
-}
 
 TF_StatusCallback* ToC(tsl::StatusCallback callback) {
   TF_StatusCallback* c_callback = new TF_StatusCallback();
@@ -85,6 +81,7 @@ tsl::StatusCallback FromC(TF_StatusCallback* callback) {
     TF_Status* c_status = TF_NewStatus();
     Set_TF_Status_from_Status(c_status, status);
     callback->callback(callback->context, c_status);
+    TF_DeleteStatus(c_status);
   };
 }
 
@@ -149,8 +146,11 @@ class TfCThunkDeviceContext final : public DeviceContext {
             device_tensor](const absl::Status& status) -> void {
       // TODO: Find a way to convert device tensor.
       done(status);
+      // Make a copy of params on local variable, since this std::function will
+      // be destructed in Destroy() below.
+      auto param_to_delete = params;
       Destroy(params);
-      delete params;
+      delete param_to_delete;
     };
 
     absl::Status tensor_status;
@@ -183,8 +183,11 @@ class TfCThunkDeviceContext final : public DeviceContext {
         tensor_status = TF_TensorToTensor(params->cpu_tensor, cpu_tensor);
       }
       done(tensor_status);
+      // Make a copy of params on local variable, since this std::function will
+      // be destructed in Destroy() below.
+      auto param_to_delete = params;
       Destroy(params);
-      delete params;
+      delete param_to_delete;
     };
 
     absl::Status tensor_status;
@@ -197,6 +200,7 @@ class TfCThunkDeviceContext final : public DeviceContext {
     params->tensor_name_len = tensor_name.size();
     params->tensor_name = new char[params->tensor_name_len + 1];
     strncpy(params->tensor_name, tensor_name.data(), params->tensor_name_len);
+    params->tensor_name[params->tensor_name_len] = 0;
     const TF_DeviceContext_CopyDeviceTensorToCPU_Impl& func =
         thunk_.device_to_cpu;
     func.device_to_cpu_func(func.context, params);
@@ -216,8 +220,11 @@ class TfCThunkDeviceContext final : public DeviceContext {
         tensor_status = TF_TensorToTensor(params->output_tensor, output_tensor);
       }
       done(tensor_status);
+      // Make a copy of params on local variable, since this std::function will
+      // be destructed in Destroy() below.
+      auto param_to_delete = params;
       Destroy(params);
-      delete params;
+      delete param_to_delete;
     };
 
     absl::Status tensor_status;

@@ -65,8 +65,9 @@ typedef struct TF_RendezvousSenderImpl {
 typedef struct TF_RendezvousDoneCallback_Params {
   void* context;
   const TF_Status* status;
-  const TF_RendezvousArgsStruct* sender_args;
-  const TF_RendezvousArgsStruct* recver_args;
+  // TODO: Pass args through.
+  // const TF_RendezvousArgsStruct* sender_args;
+  // const TF_RendezvousArgsStruct* recver_args;
   const TF_Tensor* tensor;
   bool is_dead;
 } TF_RendezvousDoneCallback_Params;
@@ -103,7 +104,6 @@ typedef struct TF_RendezvousStartAbortImpl {
 } TF_RendezvousStartAbortImpl;
 
 typedef struct TF_RendezvousThunk {
-  void* context;  // not owned
   TF_RendezvousSenderImpl send;
   TF_RendezvousAsyncRecverImpl async_recv;
   TF_RendezvousStartAbortImpl start_abort;

@@ -2042,7 +2042,7 @@ from tensorflow.python.util.deprecation import deprecated_endpoints
 from tensorflow.python.util import dispatch as _dispatch
 from tensorflow.python.util.tf_export import tf_export
 
-from typing import TypeVar, Sequence, Any
+from typing import TypeVar, List, Any
 from typing_extensions import Annotated
 )");
   for (const auto& op_def : ops.op()) {
@@ -2145,7 +2145,7 @@ string GetArgAnnotation(
     const OpDef::ArgDef& arg,
     const std::unordered_map<string, string>& type_annotations) {
   if (!arg.number_attr().empty()) {
-    return strings::StrCat("Annotated[Sequence[Any], ",
+    return strings::StrCat("Annotated[List[Any], ",
                            GetSingleTensorArgAnnotation(arg, type_annotations),
                            "]");
   }
